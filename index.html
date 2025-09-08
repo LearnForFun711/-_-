@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>比喻句挑戰 3.1</title>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --primary-dark: #0056b3;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --light-bg: #f0f7ff;
+            --dark-text: #343a40;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', 'Heiti TC', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: var(--light-bg);
+            color: var(--dark-text);
+            text-align: center;
+            padding: 20px 0;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 700px;
+        }
+        h1 {
+            color: var(--primary-dark);
+            margin-bottom: 15px;
+        }
+        p {
+            font-size: 1.1em;
+            color: #555;
+            margin-bottom: 25px;
+        }
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.3em;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            background-color: var(--primary-color);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-3px);
+        }
+        
+        /* Screens */
+        #game-screen, #end-screen {
+            display: none;
+        }
+
+        /* Game Screen */
+        #game-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        #score-display { color: var(--primary-color); }
+        
+        #lives-container {
+            display: flex;
+            gap: 5px;
+        }
+        .heart-icon {
+            width: 28px;
+            height: 28px;
+            fill: var(--danger-color);
+            transition: fill 0.5s ease;
+        }
+        .heart-icon.lost {
+            fill: #ccc;
+        }
+
+        #timer-container {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        #timer-bar {
+            height: 100%;
+            width: 100%;
+            background-color: var(--success-color);
+            border-radius: 10px;
+            transition: width 0.1s linear, background-color 0.5s;
+        }
+
+        #sentence-box {
+            font-size: 1.7em;
+            font-weight: bold;
+            line-height: 1.6;
+            margin: 25px 0;
+            padding: 25px;
+            background-color: #e9f5ff;
+            border-radius: 10px;
+            border-left: 6px solid var(--primary-color);
+            min-height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #004a8f;
+        }
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .option-btn {
+            padding: 15px 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border: 2px solid var(--primary-color);
+            border-radius: 10px;
+            cursor: pointer;
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .option-btn:hover:not(:disabled) {
+            background-color: var(--primary-dark);
+            border-color: var(--primary-dark);
+        }
+        .option-btn:disabled {
+            background-color: #a0a0a0;
+            border-color: #a0a0a0;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        #feedback-container {
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: 10px;
+            min-height: 50px;
+        }
+        #feedback {
+            font-size: 1.4em;
+            font-weight: bold;
+        }
+        .correct { color: var(--success-color); }
+        .incorrect { color: var(--danger-color); }
+
+        #explanation-box {
+            display: none;
+            margin-top: 15px;
+            padding: 20px;
+            background-color: var(--dark-text);
+            color: #ffffff;
+            border-radius: 10px;
+            font-size: 1.1em;
+            line-height: 1.7;
+            text-align: left;
+        }
+
+        /* End Screen */
+        #history-log {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            text-align: left;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        .history-item p {
+            margin: 5px 0;
+            font-size: 1em;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="container">
+        <h1>比喻句挑戰 3.1 🧐</h1>
+        <p>準備好測試你的語文能力了嗎？<br>在時間內快速作答，爭取最高分吧！</p>
+        <button id="start-btn" class="btn">開始遊戲</button>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="container">
+        <div id="game-stats">
+            <span id="question-counter">問題 1/20</span>
+            <span id="score-display">分數: 0</span>
+            <div id="lives-container">
+                <svg class="heart-icon" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                <svg class="heart-icon" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                <svg class="heart-icon" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </div>
+        </div>
+        <div id="timer-container">
+            <div id="timer-bar"></div>
+        </div>
+        <div id="sentence-box">...</div>
+        <div class="options">
+            <button class="option-btn" onclick="checkAnswer('明喻')">明喻</button>
+            <button class="option-btn" onclick="checkAnswer('暗喻')">暗喻</button>
+            <button class="option-btn" onclick="checkAnswer('借喻')">借喻</button>
+        </div>
+        <div id="feedback-container">
+            <div id="feedback"></div>
+            <div id="explanation-box"></div>
+        </div>
+    </div>
+
+    <!-- End Screen -->
+    <div id="end-screen" class="container">
+        <h1>遊戲結束！</h1>
+        <p style="font-size: 1.5em; font-weight: bold;">你的最終分數是: <span id="final-score">0</span></p>
+        <h2>答題記錄</h2>
+        <div id="history-log"></div>
+        <button id="restart-btn" class="btn" style="margin-top: 20px;">重新挑戰</button>
+    </div>
+
+    <script>
+        const questions = [
+            // 明喻 (Simile) x10
+            { sentence: '天上的雲朵像軟綿綿的棉花糖。', type: '明喻', explanation: '這句是「明喻」，因為句子用比喻詞「像」字，清楚地把「雲朵」(本體) 比喻成「棉花糖」(喻體)。' },
+            { sentence: '圓圓的月亮好像一個銀色的盤子。', type: '明喻', explanation: '這句是「明喻」，因為句子用比喻詞「好像」，把「月亮」(本體) 比喻成「銀色的盤子」(喻體)。' },
+            { sentence: '爸爸的愛如同一座山，厚實而可靠。', type: '明喻', explanation: '這句是「明喻」，因為句子用比喻詞「如同」，把「爸爸的愛」(本體) 比喻成「山」(喻體)。' },
+            { sentence: '湖水清澈得彷彿一面鏡子。', type: '明喻', explanation: '這句是「明喻」，因為句子用比喻詞「彷彿」，把「湖水」(本體) 比喻成「鏡子」(喻體)。' },
+            { sentence: '妹妹的臉蛋紅得好似蘋果。', type: '明喻', explanation: '這句是「明喻」，因為句子用比喻詞「好似」，把「妹妹的臉蛋」(本體) 比喻成「蘋果」(喻體)。' },
+            { sentence: '街上的燈光有如閃爍的星星。', type: '明喻', explanation: '這句是「明喻」，因為句子用比喻詞「有如」，把「街上的燈光」(本體) 比喻成「星星」(喻體)。' },
+            { sentence: '瀑布的聲音彷彿千軍萬馬在奔騰。', type: '明喻', explanation: '這句是「明喻」，因為句子用比喻詞「彷彿」，把「瀑布的聲音」(本體) 比喻成「千軍萬馬」(喻體)。' },
+            { sentence: '這本書的內容就像一座知識的寶庫。', type: '明喻', explanation: '這句是「明喻」，因為句子用比喻詞「就像」，把「書的內容」(本體) 比喻成「知識的寶庫」(喻體)。' },
+            { sentence: '他的手臂壯得跟一根柱子似的。', type: '明喻', explanation: '這句是「明喻」，因為句子用比喻詞「似的」，把「他的手臂」(本體) 比喻成「柱子」(喻體)。' },
+            { sentence: '老師的話語如春風一般溫暖我們的心。', type: '明喻', explanation: '這句是「明喻」，因為句子用比喻詞「如」，把「老師的話語」(本體) 比喻成「春風」(喻體)。' },
+            // 暗喻 (Metaphor) x10
+            { sentence: '馬路是一條長長的河流，車子是河裡的魚兒。', type: '暗喻', explanation: '這句是「暗喻」，因為句子沒有用比喻詞，而是直接斷定「馬路」(本體) 就是「河流」(喻體)。' },
+            { sentence: '時間是無情的小偷，悄悄地偷走我們的歲月。', type: '暗喻', explanation: '這句是「暗喻」，因為句子直接把「時間」(本體) 說成是「小偷」(喻體)，有「A是B」的格式。' },
+            { sentence: '妹妹是我們家的開心果。', type: '暗喻', explanation: '這句是「暗喻」，因為句子直接把「妹妹」(本體) 說成是「開心果」(喻體)，表達她帶來歡樂的特質。' },
+            { sentence: '那座高山是守護著這片土地的巨人。', type: '暗喻', explanation: '這句是「暗喻」，因為句子直接斷定「高山」(本體) 就是「巨人」(喻体)，形容其雄偉。' },
+            { sentence: '勤奮是通往成功的階梯。', type: '暗喻', explanation: '這句是「暗喻」，因為句子直接把「勤奮」(本體) 說成是「階梯」(喻體)。' },
+            { sentence: '電腦是現代人不可或缺的大腦。', type: '暗喻', explanation: '這句是「暗喻」，因為句子直接斷定「電腦」(本體) 就是「大腦」(喻體)，強調其處理資訊的功能。' },
+            { sentence: '孩子們是國家未來的主人翁。', type: '暗喻', explanation: '這句是「暗喻」，因為句子直接把「孩子們」(本體) 說成是「主人翁」(喻體)。' },
+            { sentence: '寬容是人與人之間最美的橋樑。', type: '暗喻', explanation: '這句是「暗喻」，因為句子直接把「寬容」(本體) 說成是「橋樑」(喻體)。' },
+            { sentence: '一本好書，就是一位良師益友。', type: '暗喻', explanation: '這句是「暗喻」，因為句子直接斷定「好書」(本體) 就是「良師益友」(喻體)。' },
+            { sentence: '挫折是磨練意志的礪石。', type: '暗喻', explanation: '這句是「暗喻」，因為句子直接把「挫折」(本體) 說成是「礪石」(喻體)，強調其磨練的作用。' },
+            // 借喻 (Implied Metaphor) x10
+            { sentence: '秋風掃過，地上鋪滿了金色的地毯。', type: '借喻', explanation: '這句是「借喻」，因為句子中「本體」(落葉)沒有出現，只用「金色的地毯」(喻體) 來代替滿地的落葉。' },
+            { sentence: '烏雲密佈，天空的臉色沉了下來。', type: '借喻', explanation: '這句是「借喻」，因為句子中「本體」(天空的景象)沒有出現，而是直接借用人的「臉色」(喻體) 來形容。' },
+            { sentence: '一串串熟透的珍珠掛在藤上，晶瑩剔透。', type: '借喻', explanation: '這句是「借喻」，因為句子中「本體」(葡萄)沒有出現，只用「珍珠」(喻體) 來代替它。' },
+            { sentence: '他心中的那團火，因為一句鼓勵而重新燃燒。', type: '借喻', explanation: '這句是「借喻」，因為句子中「本體」(熱情或希望)沒有出現，只用「火」(喻體) 來代替。' },
+            { sentence: '夜空中灑滿了碎鑽。', type: '借喻', explanation: '這句是「借喻」，因為句子中「本體」(星星)沒有出現，只用「碎鑽」(喻體) 來代替滿天星光。' },
+            { sentence: '我們要小心提防社會上的毒草。', type: '借喻', explanation: '這句是「借喻」，因為句子中「本體」(不良思想或壞人)沒有出現，只用「毒草」(喻體) 來代替。' },
+            { sentence: '這隻老狐狸又在打什麼鬼主意？', type: '借喻', explanation: '這句是「借喻」，因為句子中「本體」(狡猾的人)沒有出現，只用「老狐狸」(喻體) 來代替。' },
+            { sentence: '母親的嘮叨，是夏日裡的一陣涼風。', type: '借喻', explanation: '這句是「借喻」，「本體」(關懷)沒有出現，直接用「夏日的涼風」(喻體)來形容母親的嘮叨所帶來的效果。' },
+            { sentence: '窗外的霓虹，為這城市穿上了華麗的晚裝。', type: '借喻', explanation: '這句是「借喻」，「本體」(城市的夜景)沒有出現，直接用「華麗的晚裝」(喻體)來形容。' },
+            { sentence: '別看他平時沉默，骨子裡是頭猛虎。', type: '借喻', explanation: '這句是「借喻」，「本體」(勇猛的性格)沒有出現，直接用「猛虎」(喻體)來形容他內在的個性。' },
+        ];
+
+        // DOM Elements
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const endScreen = document.getElementById('end-screen');
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const sentenceBox = document.getElementById('sentence-box');
+        const feedback = document.getElementById('feedback');
+        const explanationBox = document.getElementById('explanation-box');
+        const optionButtons = document.querySelectorAll('.option-btn');
+        const scoreDisplay = document.getElementById('score-display');
+        const livesContainer = document.getElementById('lives-container');
+        const questionCounter = document.getElementById('question-counter');
+        const timerBar = document.getElementById('timer-bar');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const historyLog = document.getElementById('history-log');
+
+        // Game State
+        let unaskedQuestions = [];
+        let currentQuestion = {};
+        let score = 0;
+        let wrongAnswers = 0;
+        let questionNumber = 0;
+        let gameHistory = [];
+        let timerInterval;
+        let timeRemaining;
+        let currentTimerDuration;
+
+        // Game Config
+        const MAX_WRONG_ANSWERS = 3;
+        const MAX_QUESTIONS = 20;
+        const INITIAL_TIMER_DURATION = 15000; // 15 seconds
+        const MIN_TIMER_DURATION = 5000; // 5 seconds
+        const TIMER_DECREMENT = 500; // 0.5 seconds
+        const DELAY_CORRECT = 3000;
+        const DELAY_INCORRECT = 7000;
+
+        function init() {
+            startBtn.addEventListener('click', startGame);
+            restartBtn.addEventListener('click', () => {
+                endScreen.style.display = 'none';
+                startScreen.style.display = 'block';
+            });
+        }
+
+        function startGame() {
+            // Reset state
+            score = 0;
+            wrongAnswers = 0;
+            questionNumber = 0;
+            gameHistory = [];
+            currentTimerDuration = INITIAL_TIMER_DURATION;
+            unaskedQuestions = [...questions];
+
+            // Reset UI
+            document.querySelectorAll('.heart-icon').forEach(heart => {
+                heart.classList.remove('lost');
+            });
+            startScreen.style.display = 'none';
+            gameScreen.style.display = 'block';
+            
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            if (wrongAnswers >= MAX_WRONG_ANSWERS || questionNumber >= MAX_QUESTIONS) {
+                endGame();
+                return;
+            }
+
+            questionNumber++;
+
+            // Reset UI for next question
+            feedback.textContent = '';
+            feedback.className = '';
+            explanationBox.style.display = 'none';
+            optionButtons.forEach(btn => btn.disabled = false);
+            updateStats();
+            
+            // Get new question
+            const randomIndex = Math.floor(Math.random() * unaskedQuestions.length);
+            currentQuestion = unaskedQuestions.splice(randomIndex, 1)[0];
+            sentenceBox.textContent = currentQuestion.sentence;
+
+            // Start timer
+            startTimer();
+        }
+        
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeRemaining = currentTimerDuration;
+            timerBar.style.transition = 'none'; // Reset transition for instant width change
+            timerBar.style.width = '100%';
+            timerBar.style.backgroundColor = 'var(--success-color)';
+            
+            // Force reflow to apply the reset width instantly
+            void timerBar.offsetWidth; 
+            
+            timerBar.style.transition = `width ${currentTimerDuration / 1000}s linear, background-color 0.5s`;
+            timerBar.style.width = '0%';
+
+            timerInterval = setInterval(() => {
+                timeRemaining -= 100;
+                if(timeRemaining < currentTimerDuration * 0.25) timerBar.style.backgroundColor = 'var(--danger-color)';
+                else if(timeRemaining < currentTimerDuration * 0.5) timerBar.style.backgroundColor = '#ffc107';
+
+                if (timeRemaining <= 0) {
+                    checkAnswer(null); // Time's up
+                }
+            }, 100);
+        }
+
+        function checkAnswer(userAnswer) {
+            clearInterval(timerInterval);
+            // Freeze the timer bar visually
+            const computedStyle = window.getComputedStyle(timerBar);
+            const currentWidth = computedStyle.getPropertyValue('width');
+            timerBar.style.transition = 'none';
+            timerBar.style.width = currentWidth;
+
+            optionButtons.forEach(btn => btn.disabled = true);
+
+            let wasCorrect = userAnswer === currentQuestion.type;
+            let pointsEarned = 0;
+
+            if (wasCorrect) {
+                feedback.textContent = '答對了！你真棒！😄';
+                feedback.className = 'correct';
+                
+                const timePercentage = timeRemaining / currentTimerDuration;
+                if (timePercentage > 0.75) pointsEarned = 20;
+                else if (timePercentage > 0.50) pointsEarned = 15;
+                else if (timePercentage > 0.25) pointsEarned = 10;
+                else pointsEarned = 5;
+                score += pointsEarned;
+
+            } else {
+                wrongAnswers++;
+                const hearts = document.querySelectorAll('.heart-icon');
+                if (hearts[wrongAnswers - 1]) {
+                    hearts[wrongAnswers - 1].classList.add('lost');
+                }
+                feedback.textContent = userAnswer === null ? '時間到！' : '答錯了...';
+                feedback.innerHTML += ` 正確答案是「${currentQuestion.type}」。`;
+                feedback.className = 'incorrect';
+            }
+            
+            explanationBox.textContent = currentQuestion.explanation;
+            explanationBox.style.display = 'block';
+
+            gameHistory.push({
+                question: currentQuestion.sentence,
+                userAnswer: userAnswer || '未作答',
+                correctAnswer: currentQuestion.type,
+                wasCorrect: wasCorrect,
+                explanation: currentQuestion.explanation
+            });
+            
+            updateStats();
+
+            // Decrease timer for next round, with a minimum
+            if (currentTimerDuration > MIN_TIMER_DURATION) {
+                currentTimerDuration -= TIMER_DECREMENT;
+            }
+
+            setTimeout(loadQuestion, wasCorrect ? DELAY_CORRECT : DELAY_INCORRECT);
+        }
+
+        function updateStats() {
+            scoreDisplay.textContent = `分數: ${score}`;
+            questionCounter.textContent = `問題 ${questionNumber}/${MAX_QUESTIONS}`;
+        }
+        
+        function endGame() {
+            gameScreen.style.display = 'none';
+            endScreen.style.display = 'block';
+            finalScoreDisplay.textContent = score;
+            renderHistory();
+        }
+
+        function renderHistory() {
+            historyLog.innerHTML = '';
+            gameHistory.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'history-item';
+                itemDiv.innerHTML = `
+                    <p><strong>題目:</strong> ${item.question}</p>
+                    <p style="color: ${item.wasCorrect ? 'var(--success-color)' : 'var(--danger-color)'}"><strong>你的答案:</strong> ${item.userAnswer}</p>
+                    <p><strong>正確答案:</strong> ${item.correctAnswer}</p>
+                    <p><strong>原因:</strong> ${item.explanation}</p>
+                `;
+                historyLog.appendChild(itemDiv);
+            });
+        }
+
+        init();
+    </script>
+
+</body>
+</html>
+
